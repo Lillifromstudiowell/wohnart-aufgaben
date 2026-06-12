@@ -152,7 +152,7 @@ let editMode=false, dragId=null, openThreads=new Set(), saveTimer=null;
 
 async function boot() {
   showLoading('Wird geladen…');
-  try { const d = await apiBin('GET','/b/'+binId+'/latest'); tasks=d.record.tasks||DEFAULTS; showApp(); }
+  try { const d = await apiBin('GET','/b/'+binId+'/latest'); tasks=(d.record.tasks && d.record.tasks.length>0)?d.record.tasks:DEFAULTS; showApp(); }
   catch(e) { document.getElementById('app').innerHTML='<div class="loading"><p style="color:#c0392b">Verbindung fehlgeschlagen. Bitte Internetverbindung prüfen.</p></div>'; }
 }
 
