@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wohnart — Aufgaben</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f2f2ef; color: #1a1a1a; font-size: 14px; min-height: 100vh; }
+.setup-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+.setup-box { background: #fff; border-radius: 12px; border: 1px solid #e5e5e0; padding: 40px; max-width: 440px; width: 100%; }
+.setup-box h2 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+.setup-box p { color: #777; font-size: 13px; line-height: 1.5; margin-bottom: 20px; }
+.setup-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; margin-bottom: 10px; transition: all 0.15s; }
+.setup-btn.primary { background: #1a1a1a; color: #fff; }
+.setup-btn.primary:hover { background: #333; }
+.setup-btn.secondary { background: #f2f2ef; color: #555; border: 1.5px solid #e5e5e0; }
+.setup-btn.secondary:hover { border-color: #1a1a1a; }
+.setup-input { width: 100%; padding: 10px 12px; border: 1.5px solid #e5e5e0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; margin-bottom: 10px; }
+.setup-input:focus { border-color: #1a1a1a; }
+.setup-divider { text-align: center; color: #ccc; font-size: 12px; margin: 14px 0; }
+.bin-id-display { background: #f2f2ef; border-radius: 8px; padding: 12px 14px; font-family: monospace; font-size: 13px; word-break: break-all; margin: 12px 0; border: 1.5px solid #d4ca85; letter-spacing: 0.03em; }
+.error-msg { color: #c0392b; font-size: 12px; margin: 8px 0; }
+.loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 12px; }
+.spinner { width: 28px; height: 28px; border: 2.5px solid #e5e5e0; border-top-color: #1a1a1a; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading p { color: #aaa; font-size: 13px; }
+.save-status { font-size: 11px; color: #aaa; }
+.save-status.saving { color: #d4ca85; }
+.save-status.saved { color: #6fcf97; }
+.save-status.err { color: #eb5757; }
+.header { background: #fff; border-bottom: 1px solid #e5e5e0; padding: 14px 28px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
+.header h1 { font-size: 15px; font-weight: 600; flex-shrink: 0; }
+.header h1 span { color: #aaa; font-weight: 400; }
+.spacer { flex: 1; }
+.user-toggle { display: flex; border: 1.5px solid #e5e5e0; border-radius: 8px; overflow: hidden; }
+.user-toggle button { padding: 6px 16px; border: none; background: #fff; cursor: pointer; font-size: 13px; color: #666; transition: all 0.15s; }
+.user-toggle button.active { background: #1a1a1a; color: #fff; }
+.btn-edit { padding: 6px 16px; border: 1.5px solid #e5e5e0; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; color: #555; transition: all 0.15s; }
+.btn-edit:hover { border-color: #1a1a1a; color: #1a1a1a; }
+.btn-edit.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.btn-disc { padding: 6px 10px; border: 1.5px solid #e5e5e0; border-radius: 8px; background: #fff; cursor: pointer; font-size: 12px; color: #bbb; }
+.btn-disc:hover { color: #c0392b; border-color: #f5c6c6; }
+.progress { height: 2px; background: #e5e5e0; }
+.progress-fill { height: 100%; background: #1a1a1a; transition: width 0.4s; }
+.columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #e5e5e0; min-height: calc(100vh - 59px); }
+.column { background: #f2f2ef; padding: 20px; }
+.col-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #1a1a1a; }
+.col-header h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.col-header .count { font-size: 12px; color: #999; }
+.col-right .col-header { border-color: #6fcf97; }
+.col-right .col-header h2 { color: #27ae60; }
+.column.drag-over { background: #ebe9e2; }
+.section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #bbb; margin: 16px 0 6px; padding-left: 2px; }
+.section-label:first-child { margin-top: 0; }
+.task-card { background: #fff; border-radius: 8px; border: 1px solid #e8e8e3; margin-bottom: 6px; cursor: grab; transition: box-shadow 0.15s; }
+.task-card:active { cursor: grabbing; box-shadow: 0 4px 16px rgba(0,0,0,.10); }
+.task-card.dragging { opacity: 0.35; }
+.task-card.has-thread { border-color: #d4ca85; }
+.col-right .task-card { opacity: 0.6; cursor: default; }
+.card-top { display: flex; align-items: flex-start; gap: 10px; padding: 11px 12px; }
+input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: #1a1a1a; flex-shrink: 0; margin-top: 2px; }
+.card-body { flex: 1; min-width: 0; }
+.task-text { line-height: 1.45; color: #1a1a1a; font-size: 13.5px; }
+.task-text-edit { width: 100%; border: 1.5px solid #d4ca85; border-radius: 5px; padding: 5px 7px; font-size: 13.5px; font-family: inherit; resize: vertical; outline: none; background: #fffdf5; min-height: 38px; line-height: 1.45; margin-bottom: 4px; }
+.task-link { font-size: 11px; color: #bbb; margin-top: 3px; word-break: break-all; }
+.task-link a { color: #88a8c8; text-decoration: none; }
+.task-link a:hover { text-decoration: underline; }
+.task-link-edit { width: 100%; border: 1px solid #e5e5e0; border-radius: 5px; padding: 4px 7px; font-size: 11px; font-family: inherit; outline: none; color: #88a8c8; margin-top: 4px; }
+.card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.btn-thread { background: none; border: 1px solid #e5e5e0; border-radius: 6px; padding: 3px 9px; cursor: pointer; font-size: 11px; color: #999; transition: all 0.15s; white-space: nowrap; }
+.btn-thread:hover, .btn-thread.open, .btn-thread.has-msgs { border-color: #d4ca85; color: #b7a040; background: #fffdf0; }
+.btn-del { display: none; background: none; border: 1px solid #e5e5e0; border-radius: 6px; padding: 3px 7px; cursor: pointer; font-size: 11px; color: #ccc; }
+.btn-del:hover { border-color: #f5c6c6; color: #c0392b; background: #fef5f5; }
+body.edit-mode .btn-del { display: inline-block; }
+.thread { border-top: 1px solid #f0f0ec; background: #fafaf7; display: none; border-radius: 0 0 7px 7px; }
+.thread.open { display: block; }
+.messages { padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; max-height: 240px; overflow-y: auto; }
+.msg { max-width: 88%; }
+.msg.me { align-self: flex-end; }
+.msg-bubble { padding: 7px 11px; border-radius: 10px; font-size: 12.5px; line-height: 1.4; }
+.msg.other .msg-bubble { background: #f0f0ec; color: #1a1a1a; border-radius: 10px 10px 10px 2px; }
+.msg.me .msg-bubble { background: #1a1a1a; color: #fff; border-radius: 10px 10px 2px 10px; }
+.msg-meta { font-size: 10px; color: #bbb; margin-top: 2px; }
+.msg.me .msg-meta { text-align: right; }
+.thread-input { display: flex; gap: 8px; padding: 8px 12px; border-top: 1px solid #f0f0ec; align-items: flex-end; }
+.thread-input textarea { flex: 1; border: 1px solid #e5e5e0; border-radius: 6px; padding: 7px 9px; font-size: 12.5px; font-family: inherit; resize: none; outline: none; min-height: 34px; max-height: 100px; line-height: 1.4; }
+.thread-input textarea:focus { border-color: #d4ca85; }
+.thread-input button { padding: 7px 14px; background: #1a1a1a; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; flex-shrink: 0; }
+.thread-input button:hover { background: #333; }
+.btn-add { display: none; width: 100%; padding: 9px; border: 1.5px dashed #d4ca85; border-radius: 8px; background: transparent; cursor: pointer; font-size: 13px; color: #c0aa30; text-align: center; margin-top: 4px; }
+.btn-add:hover { background: #fffdf0; }
+body.edit-mode .btn-add { display: block; }
+.drop-hint { text-align: center; padding: 48px 20px; color: #ccc; font-size: 13px; border: 2px dashed #e0e0da; border-radius: 10px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const API_KEY = '$2a$10$uY4KRXn42VF7xt.xu5qaJeyqNy9gvfmY8RmcbBnb4qayjTqViH77e';
+const BASE = 'https://api.jsonbin.io/v3';
+
+async function apiBin(method, path, data) {
+  const opts = { method, headers: { 'X-Master-Key': API_KEY, 'Content-Type': 'application/json' } };
+  if (data) opts.body = JSON.stringify(data);
+  const r = await fetch(BASE + path, opts);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+function uid() { return '_' + Math.random().toString(36).slice(2,9); }
+
+const DEFAULTS = [
+  {section:'Kundenwünsche',text:'Serifenlose Schrift verwenden — Christian findet aktuelle Version zu unruhig.',link:''},
+  {section:'Kundenwünsche',text:'Bilder rechteckig statt quadratisch.',link:''},
+  {section:'Kundenwünsche',text:'Wohneinheiten: Emma hat das eingerichtet — Implementierung auf Website nötig.',link:''},
+  {section:'Kundenwünsche',text:'Objekt "Bozen015" ist archiviert, erscheint aber noch auf der Website. Bitte entfernen.',link:''},
+  {section:'Links & Verlinkungen',text:'Grundriss downloaden — Button verlinken.',link:''},
+  {section:'Links & Verlinkungen',text:'Anfrage senden — Button verlinken.',link:''},
+  {section:'Links & Verlinkungen',text:'E-Mail-Adresse verlinken: info@wohnart-immobilien.net',link:'mailto:info@wohnart-immobilien.net'},
+  {section:'Links & Verlinkungen',text:'WhatsApp hinterlegen mit Mobil-Nummer.',link:''},
+  {section:'Links & Verlinkungen',text:'Button "E-Mail kopieren" und "Link kopieren" — Funktion aktivieren.',link:''},
+  {section:'Links & Verlinkungen',text:'Facebook verlinken',link:'https://m.facebook.com/Wohnart.Immobilien/?locale=de_DE&_rdr'},
+  {section:'Links & Verlinkungen',text:'Instagram verlinken — URL steht noch aus.',link:''},
+  {section:'Links & Verlinkungen',text:'Adresse im Footer mit Google Maps verlinken.',link:''},
+  {section:'Links & Verlinkungen',text:'"Design by Studio Well" verlinken',link:'https://www.we-ll.it'},
+  {section:'Kontaktdaten korrigieren',text:'Telefonnummer: +44 → +39 0471 813 545',link:''},
+  {section:'Kontaktdaten korrigieren',text:'Fax: 0471 823 250',link:''},
+  {section:'Kontaktdaten korrigieren',text:'Mobil: +39 339 719 37 28',link:''},
+  {section:'Kontaktdaten korrigieren',text:'MwSt.-Nr.: 02597350210',link:''},
+  {section:'Kontaktdaten korrigieren',text:'Unterseite Kontakt: alle Daten aktualisieren.',link:'https://navajowhite-emu-155703.hostingersite.com/kontakt/'},
+  {section:'Design & Funktionen',text:'Grundriss: Lightbox öffnen wenn man draufklickt.',link:''},
+  {section:'Design & Funktionen',text:'Grundriss: falls keiner vorhanden → Download-Button ausblenden.',link:''},
+  {section:'Design & Funktionen',text:'Foto-Pfeile ersetzen — SVGs gesendet.',link:''},
+  {section:'Design & Funktionen',text:'Hover-Effekt Objekt-Karten: Bild innerhalb Rahmen vergrößern.',link:''},
+  {section:'Design & Funktionen',text:'Foto-Slider: Einblend-Effekt immer nur von unten nach oben.',link:''},
+  {section:'Design & Funktionen',text:'Icons im grauen Infofeld (Detailseite) austauschen.',link:''},
+  {section:'Design & Funktionen',text:'Copyright: © 2026 Wohnart Immobilien · Alle Rechte vorbehalten. · Design by Studio Well',link:''},
+  {section:'Unterseiten',text:'Gewerbe: Schrift/Schnitt im Kontaktbereich mit Figma abgleichen.',link:''},
+  {section:'Unterseiten',text:'Labels bei manchen Objekten werden nicht angezeigt.',link:''},
+  {section:'Unterseiten',text:'Foto-Pfeile auf Detailseite: vertikal mittig am Bild.',link:''},
+  {section:'Unterseiten',text:'Logo auf Unterseiten: Transparenz der Menüleiste reduzieren.',link:''},
+  {section:'In Klärung',text:'Instagram-Link: Elisabeth fragt bei Wohnart nach.',link:''},
+  {section:'In Klärung',text:'Schaufenster-Seite mit Passwort schützen wenn live.',link:'https://navajowhite-emu-155703.hostingersite.com/schaufenster/'},
+  {section:'Am Ende — Feinschliff',text:'Abstände und kleinere Designdetails (Desktop).',link:''},
+  {section:'Am Ende — Feinschliff',text:'Mobile: Detailarbeiten nach finaler Desktop-Version.',link:''},
+  {section:'Am Ende — Feinschliff',text:'Hover-Effekte über Buttons finalisieren.',link:''},
+].map(d => ({...d, id: uid(), status: 'offen', thread: []}));
+
+let tasks=[], binId='6a2c1f4bf5f4af5e29e6f71f', currentUser=localStorage.getItem('wb_user')||'Elisabeth';
+let editMode=false, dragId=null, openThreads=new Set(), saveTimer=null;
+
+async function boot() {
+  showLoading('Wird geladen…');
+  try { const d = await apiBin('GET','/b/'+binId+'/latest'); tasks=d.record.tasks||DEFAULTS; showApp(); }
+  catch(e) { document.getElementById('app').innerHTML='<div class="loading"><p style="color:#c0392b">Verbindung fehlgeschlagen. Bitte Internetverbindung prüfen.</p></div>'; }
+}
+
+function showLoading(msg) { document.getElementById('app').innerHTML='<div class="loading"><div class="spinner"></div><p>'+msg+'</p></div>'; }
+
+function showSetup(err) {
+  document.getElementById('app').innerHTML=`<div class="setup-screen"><div class="setup-box">
+    <h2>Wohnart — Aufgaben</h2>
+    <p>Einmalige Einrichtung. Danach lädt die Datei direkt.</p>
+    ${err?'<div class="error-msg">'+err+'</div>':''}
+    <button class="setup-btn primary" onclick="handleCreate()">✦ Neues Projekt erstellen</button>
+    <div class="setup-divider">— oder vorhandene Bin-ID eingeben —</div>
+    <input class="setup-input" id="bin-in" type="text" placeholder="Bin-ID eingeben…">
+    <button class="setup-btn secondary" onclick="handleConnect()">Verbinden</button>
+  </div></div>`;
+}
+
+function showBinCreated(id) {
+  document.getElementById('app').innerHTML=`<div class="setup-screen"><div class="setup-box">
+    <h2>✓ Projekt erstellt</h2>
+    <p>Schick Ivan diese Bin-ID — er gibt sie beim ersten Öffnen ein:</p>
+    <div class="bin-id-display">${id}</div>
+    <button class="setup-btn primary" onclick="showApp()">Los geht's →</button>
+  </div></div>`;
+}
+
+async function handleCreate() {
+  showLoading('Wird erstellt…');
+  try { const j=await apiBin('POST','/b',{tasks:DEFAULTS}); binId=j.metadata.id; localStorage.setItem('wb_id',binId); tasks=DEFAULTS; showBinCreated(binId); }
+  catch(e) { showSetup('Fehler: '+e.message); }
+}
+
+async function handleConnect() {
+  const id=(document.getElementById('bin-in')?.value||'').trim(); if(!id) return;
+  showLoading('Verbinden…');
+  try { const d=await apiBin('GET','/b/'+id+'/latest'); tasks=d.record.tasks||[]; binId=id; localStorage.setItem('wb_id',id); showApp(); }
+  catch(e) { showSetup('Bin-ID nicht gefunden.'); }
+}
+
+function showApp() {
+  document.getElementById('app').innerHTML=`
+    <div class="header">
+      <h1>Wohnart <span>— Aufgaben</span></h1>
+      <div class="spacer"></div>
+      <span class="save-status" id="ss">● verbunden</span>
+      <div class="user-toggle">
+        <button id="be" onclick="setUser('Elisabeth')">Elisabeth</button>
+        <button id="bi" onclick="setUser('Ivan')">Ivan</button>
+      </div>
+      <button class="btn-edit" id="btn-edit" onclick="toggleEdit()">Bearbeiten</button>
+      <button class="btn-disc" onclick="disc()" title="Trennen">⏏</button>
+    </div>
+    <div class="progress"><div class="progress-fill" id="prog"></div></div>
+    <div class="columns">
+      <div class="column col-left" id="col-o" ondragover="dov(event)" ondrop="ddr(event,'offen')" ondragleave="dlv(event)">
+        <div class="col-header"><h2>Offen</h2><span class="count" id="co"></span></div>
+        <div id="lo"></div>
+        <button class="btn-add" onclick="addTask()">+ Aufgabe hinzufügen</button>
+      </div>
+      <div class="column col-right" id="col-e" ondragover="dov(event)" ondrop="ddr(event,'erledigt')" ondragleave="dlv(event)">
+        <div class="col-header"><h2>Erledigt ✓</h2><span class="count" id="ce"></span></div>
+        <div id="le"></div>
+      </div>
+    </div>`;
+  setUser(currentUser); render();
+  setInterval(async()=>{ try{ const d=await apiBin('GET','/b/'+binId+'/latest'); tasks=d.record.tasks||tasks; render(); }catch{} }, 30000);
+}
+
+function ss(s) { const e=document.getElementById('ss'); if(!e) return; e.className='save-status '+(s==='saving'?'saving':s==='saved'?'saved':s==='err'?'err':''); e.textContent=s==='saving'?'● speichert…':s==='saved'?'● gespeichert':s==='err'?'● Fehler':'● verbunden'; }
+
+function scheduleSave() {
+  ss('saving'); clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{ try{ await apiBin('PUT','/b/'+binId,{tasks}); ss('saved'); setTimeout(()=>ss('ok'),2000); }catch{ ss('err'); } },600);
+}
+
+function setUser(u) { currentUser=u; localStorage.setItem('wb_user',u); document.getElementById('be')?.classList.toggle('active',u==='Elisabeth'); document.getElementById('bi')?.classList.toggle('active',u==='Ivan'); }
+function toggleEdit() { editMode=!editMode; document.body.classList.toggle('edit-mode',editMode); const b=document.getElementById('btn-edit'); b.classList.toggle('active',editMode); b.textContent=editMode?'✓ Fertig':'Bearbeiten'; render(); }
+function disc() { location.reload(); }
+
+function render() {
+  const o=tasks.filter(t=>t.status==='offen'), e=tasks.filter(t=>t.status==='erledigt');
+  const co=document.getElementById('co'), ce=document.getElementById('ce'), pg=document.getElementById('prog');
+  if(co) co.textContent=o.length+' Punkte'; if(ce) ce.textContent=e.length+' Punkte';
+  if(pg) pg.style.width=(tasks.length?Math.round(e.length/tasks.length*100):0)+'%';
+  renderList('lo',o,true); renderList('le',e,false);
+}
+
+function renderList(cid,list,drag) {
+  const el=document.getElementById(cid); if(!el) return;
+  if(!list.length){ el.innerHTML='<div class="drop-hint">'+(drag?'Alle erledigt 🎉':'Hier landen erledigte Punkte')+'</div>'; return; }
+  const secs=[...new Set(list.map(t=>t.section))];
+  el.innerHTML=secs.map(s=>'<div class="section-label">'+s+'</div>'+list.filter(t=>t.section===s).map(t=>renderCard(t,drag)).join('')).join('');
+  openThreads.forEach(id=>{ document.getElementById('thread-'+id)?.classList.add('open'); document.getElementById('tbtn-'+id)?.classList.add('open'); });
+  if(drag) list.forEach(t=>{ const c=document.getElementById('card-'+t.id); if(!c) return; c.addEventListener('dragstart',ev=>{dragId=t.id; setTimeout(()=>c.classList.add('dragging'),0); ev.dataTransfer.effectAllowed='move';}); c.addEventListener('dragend',()=>c.classList.remove('dragging')); });
+  document.querySelectorAll('.thread-input textarea').forEach(ta=>{
+    ta.addEventListener('input',()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,100)+'px';});
+    ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage(ta.dataset.id,ta.value.trim());ta.value='';ta.style.height='';} });
+  });
+}
+
+function renderCard(t,drag) {
+  const ht=t.thread&&t.thread.length>0;
+  return `<div class="task-card${ht?' has-thread':''}" id="card-${t.id}" ${drag?'draggable="true"':''}>
+  <div class="card-top">
+    <input type="checkbox" ${t.status==='erledigt'?'checked':''} onchange="toggleDone('${t.id}',this.checked)">
+    <div class="card-body">
+      ${editMode?`<textarea class="task-text-edit" onblur="updT('${t.id}',this.value)">${t.text}</textarea><input class="task-link-edit" type="text" placeholder="Link (optional)" value="${t.link||''}" onblur="updL('${t.id}',this.value)">`:`<div class="task-text">${t.text}</div>${t.link?'<div class="task-link"><a href="'+t.link+'" target="_blank">'+t.link+'</a></div>':''}`}
+    </div>
+    <div class="card-actions">
+      <button class="btn-thread${ht?' has-msgs':''}" id="tbtn-${t.id}" onclick="togThread('${t.id}')">${ht?'💬 '+t.thread.length:'+ Notiz'}</button>
+      ${editMode?`<button class="btn-del" onclick="delTask('${t.id}')">✕</button>`:''}
+    </div>
+  </div>
+  <div class="thread" id="thread-${t.id}">
+    <div class="messages" id="msgs-${t.id}">${(t.thread||[]).map(m=>renderMsg(m,m.author===currentUser)).join('')}</div>
+    <div class="thread-input"><textarea data-id="${t.id}" placeholder="Antworten… (Enter = senden)" rows="1"></textarea><button onclick="sfb('${t.id}')">Senden</button></div>
+  </div>
+</div>`;
+}
+
+function renderMsg(m,me) { return `<div class="msg ${me?'me':'other'}"><div class="msg-bubble">${m.text}</div><div class="msg-meta">${m.author} · ${m.time}</div></div>`; }
+
+function toggleDone(id,v) { tasks=tasks.map(t=>t.id===id?{...t,status:v?'erledigt':'offen'}:t); scheduleSave(); render(); }
+function togThread(id) { if(openThreads.has(id))openThreads.delete(id);else openThreads.add(id); document.getElementById('thread-'+id)?.classList.toggle('open',openThreads.has(id)); document.getElementById('tbtn-'+id)?.classList.toggle('open',openThreads.has(id)); if(openThreads.has(id)) setTimeout(()=>document.querySelector('#thread-'+id+' textarea')?.focus(),50); }
+function sfb(id) { const ta=document.querySelector('#thread-'+id+' textarea'); if(ta?.value.trim()){sendMessage(id,ta.value.trim());ta.value='';ta.style.height='';} }
+function sendMessage(id,text) {
+  if(!text) return;
+  const now=new Date(), time=now.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})+' '+now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  tasks=tasks.map(t=>t.id!==id?t:{...t,thread:[...(t.thread||[]),{author:currentUser,text,time}]});
+  scheduleSave();
+  const task=tasks.find(t=>t.id===id);
+  const msgs=document.getElementById('msgs-'+id); if(msgs){msgs.innerHTML=task.thread.map(m=>renderMsg(m,m.author===currentUser)).join('');msgs.scrollTop=msgs.scrollHeight;}
+  const btn=document.getElementById('tbtn-'+id); if(btn){btn.textContent='💬 '+task.thread.length;btn.classList.add('has-msgs');}
+  document.getElementById('card-'+id)?.classList.add('has-thread');
+}
+function updT(id,v){tasks=tasks.map(t=>t.id===id?{...t,text:v}:t);scheduleSave();}
+function updL(id,v){tasks=tasks.map(t=>t.id===id?{...t,link:v}:t);scheduleSave();}
+function delTask(id){if(!confirm('Löschen?'))return;tasks=tasks.filter(t=>t.id!==id);scheduleSave();render();}
+function addTask(){const t={id:uid(),section:tasks[0]?.section||'Allgemein',text:'Neue Aufgabe',link:'',status:'offen',thread:[]};tasks.unshift(t);scheduleSave();render();setTimeout(()=>{const ta=document.querySelector('#card-'+t.id+' .task-text-edit');if(ta){ta.focus();ta.select();}},50);}
+function dov(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
+function dlv(e){e.currentTarget.classList.remove('drag-over');}
+function ddr(e,s){e.preventDefault();e.currentTarget.classList.remove('drag-over');if(!dragId)return;tasks=tasks.map(t=>t.id===dragId?{...t,status:s}:t);dragId=null;scheduleSave();render();}
+boot();
+</script>
+</body>
+</html>
